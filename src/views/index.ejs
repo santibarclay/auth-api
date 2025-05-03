@@ -1,0 +1,13 @@
+<div class="jumbotron">
+    <h1 class="display-4">Servicio de Autorización OAuth2</h1>
+    <p class="lead">Esta es una implementación de OAuth2 para securizar tu API REST.</p>
+    <hr class="my-4">
+  
+    <% if (locals.user && user.isAdmin) { %>
+      <p>Ya has iniciado sesión como administrador.</p>
+      <a class="btn btn-primary btn-lg" href="/admin/dashboard">Ir al Panel de Administración</a>
+    <% } else { %>
+      <p>Inicia sesión con tu cuenta de Google para acceder al panel de administración.</p>
+      <a class="btn btn-primary btn-lg" href="/auth/login">Iniciar Sesión</a>
+    <% } %>
+  </div>  
