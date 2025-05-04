@@ -1,0 +1,28 @@
+<div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Iniciar Sesión</div>
+        <div class="card-body">
+          <% if (locals.error) { %>
+            <div class="alert alert-danger">
+              <% if (error === 'unauthorized') { %>
+                No estás autorizado como administrador.
+              <% } else if (error === 'google') { %>
+                Error al autenticarse con Google.
+              <% } else { %>
+                Error de autenticación.
+              <% } %>
+            </div>
+          <% } %>
+          
+          <p class="text-center">Utiliza tu cuenta de Google para iniciar sesión como administrador.</p>
+          
+          <div class="d-grid gap-2">
+            <a href="/auth/google" class="btn btn-danger">
+              Iniciar Sesión con Google
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

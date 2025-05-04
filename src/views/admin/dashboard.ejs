@@ -1,0 +1,335 @@
+<h2>Panel de Administración</h2>
+
+<div class="row mb-4">
+  <div class="col">
+    <div class="card">
+      <div class="card-header">Tu Token JWT</div>
+      <div class="card-body">
+        <p>Este es tu token JWT como administrador:</p>
+        <div class="input-group">
+          <input type="text" class="form-control" value="<%= token %>" readonly id="jwt-token">
+          <button class="btn btn-outline-secondary" type="button" onclick="copyToken()">Copiar</button>
+        </div>
+        <small class="text-muted">Este token expira en una hora.</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Clientes OAuth2</span>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createClientModal">
+          Crear Nuevo Cliente
+        </button>
+      </div>
+      <div class="card-body">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>ID del Cliente</th>
+              <th>Descripción</th>
+              <th>Scopes</th>
+              <th>Creado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="clients-table">
+            <% if (clients.length === 0) { %>
+              <tr>
+                <td colspan="6" class="text-center">No hay clientes registrados</td>
+              </tr>
+            <% } else { %>
+              <% clients.forEach(client => { %>
+                <tr>
+                  <td><%= client.name %></td>
+                  <td><code><%= client.id %></code></td>
+                  <td><%= client.description %></td>
+                  <td>
+                    <ul class="list-unstyled">
+                      <% client.scopes.forEach(scope => { %>
+                        <li>
+                          <% if (scope === 'contacts:read') { %>
+                            <span class="badge bg-info">Lectura</span>
+                          <% } else if (scope === 'contacts:write') { %>
+                            <span class="badge bg-warning">Escritura</span>
+                          <% } else if (scope === 'contacts:delete') { %>
+                            <span class="badge bg-danger">Eliminación</span>
+                          <% } else { %>
+                            <span class="badge bg-secondary"><%= scope %></span>
+                          <% } %>
+                        </li>
+                      <% }); %>
+                    </ul>
+                    <button class="btn btn-sm btn-outline-primary" 
+                            onclick="editScopes('<%= client.id %>', '<%= JSON.stringify(client.scopes) %>')">
+                      Editar Scopes
+                    </button>
+                  </td>
+                  <td><%= new Date(client.createdAt).toLocaleString() %></td>
+                  <td>
+                    <button 
+                      class="btn btn-danger btn-sm" 
+                      onclick="deleteClient('<%= client.id %>', '<%= client.name %>')"
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              <% }); %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear cliente -->
+<div class="modal fade" id="createClientModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear Nuevo Cliente OAuth2</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="create-client-form">
+          <div class="mb-3">
+            <label for="client-name" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="client-name" required>
+          </div>
+          <div class="mb-3">
+            <label for="client-description" class="form-label">Descripción</label>
+            <textarea class="form-control" id="client-description" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Scopes</label>
+            <% availableScopes.forEach(scope => { %>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="<%= scope.id %>" id="scope-<%= scope.id %>" name="client-scopes">
+                <label class="form-check-label" for="scope-<%= scope.id %>">
+                  <%= scope.name %>
+                </label>
+              </div>
+            <% }); %>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="createClient()">Crear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para editar scopes -->
+<div class="modal fade" id="editScopesModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Scopes</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-scopes-form">
+          <input type="hidden" id="edit-client-id">
+          <% availableScopes.forEach(scope => { %>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="<%= scope.id %>" id="edit-scope-<%= scope.id %>" name="edit-client-scopes">
+              <label class="form-check-label" for="edit-scope-<%= scope.id %>">
+                <%= scope.name %>
+              </label>
+            </div>
+          <% }); %>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="updateScopes()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para mostrar credenciales -->
+<div class="modal fade" id="credentialsModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Credenciales del Cliente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning">
+          <strong>¡Importante!</strong> Guarda estas credenciales ahora. El Client Secret no se volverá a mostrar.
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Client ID</label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="new-client-id" readonly>
+            <button class="btn btn-outline-secondary" type="button" onclick="copyClientId()">Copiar</button>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Client Secret</label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="new-client-secret" readonly>
+            <button class="btn btn-outline-secondary" type="button" onclick="copyClientSecret()">Copiar</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Funciones JavaScript para el panel de administración
+  function copyToken() {
+    const tokenInput = document.getElementById('jwt-token');
+    tokenInput.select();
+    document.execCommand('copy');
+    alert('Token copiado al portapapeles');
+  }
+  
+  function createClient() {
+    const name = document.getElementById('client-name').value;
+    const description = document.getElementById('client-description').value;
+    
+    if (!name) {
+      alert('El nombre del cliente es requerido');
+      return;
+    }
+    
+    // Obtener scopes seleccionados
+    const scopeCheckboxes = document.querySelectorAll('input[name="client-scopes"]:checked');
+    const scopes = Array.from(scopeCheckboxes).map(cb => cb.value);
+    
+    fetch('/admin/clients', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, description, scopes })
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Error al crear el cliente');
+        }
+        return response.json();
+      })
+      .then(client => {
+        // Cerrar el modal de creación
+        const createClientModal = document.getElementById('createClientModal');
+        const modal = bootstrap.Modal.getInstance(createClientModal);
+        modal.hide();
+        
+        // Mostrar las credenciales
+        document.getElementById('new-client-id').value = client.id;
+        document.getElementById('new-client-secret').value = client.secret;
+        
+        // Abrir el modal de credenciales
+        const credentialsModal = new bootstrap.Modal(document.getElementById('credentialsModal'));
+        credentialsModal.show();
+        
+        // Refrescar la página después de cerrar el modal de credenciales
+        document.getElementById('credentialsModal').addEventListener('hidden.bs.modal', function () {
+          location.reload();
+        });
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al crear el cliente: ' + error.message);
+      });
+  }
+  
+  function editScopes(clientId, clientScopesStr) {
+    // Convertir la cadena JSON a un objeto JavaScript
+    const clientScopes = JSON.parse(clientScopesStr);
+    
+    // Guardar el ID del cliente para usarlo al actualizar
+    document.getElementById('edit-client-id').value = clientId;
+    
+    // Marcar los checkboxes correspondientes a los scopes actuales
+    document.querySelectorAll('input[name="edit-client-scopes"]').forEach(cb => {
+      cb.checked = clientScopes.includes(cb.value);
+    });
+    
+    // Abrir el modal
+    const modal = new bootstrap.Modal(document.getElementById('editScopesModal'));
+    modal.show();
+  }
+  
+  function updateScopes() {
+    const clientId = document.getElementById('edit-client-id').value;
+    
+    // Obtener scopes seleccionados
+    const scopeCheckboxes = document.querySelectorAll('input[name="edit-client-scopes"]:checked');
+    const scopes = Array.from(scopeCheckboxes).map(cb => cb.value);
+    
+    fetch(`/admin/clients/${clientId}/scopes`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ scopes })
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Error al actualizar los scopes');
+        }
+        return response.json();
+      })
+      .then(() => {
+        // Cerrar el modal y recargar la página
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editScopesModal'));
+        modal.hide();
+        location.reload();
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al actualizar los scopes: ' + error.message);
+      });
+  }
+  
+  function deleteClient(clientId, clientName) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar el cliente "${clientName}"?`)) {
+      return;
+    }
+    
+    fetch(`/admin/clients/${clientId}`, {
+      method: 'DELETE'
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Error al eliminar el cliente');
+        }
+        location.reload();
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al eliminar el cliente: ' + error.message);
+      });
+  }
+  
+  function copyClientId() {
+    const clientIdInput = document.getElementById('new-client-id');
+    clientIdInput.select();
+    document.execCommand('copy');
+    alert('Client ID copiado al portapapeles');
+  }
+  
+  function copyClientSecret() {
+    const clientSecretInput = document.getElementById('new-client-secret');
+    clientSecretInput.select();
+    document.execCommand('copy');
+    alert('Client Secret copiado al portapapeles');
+  }
+</script>
