@@ -57,7 +57,7 @@ auth-api/
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/tu-usuario/auth-api.git
+git clone https://github.com/santibarclay/auth-api.git
 cd auth-api
 ```
 
